@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>ESP32</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<link rel="stylesheet" type="text/css" href="css/bootstrap.min.css">
+	<script type="text/javascript" src="js/jquery.min.js"></script>
+	<script type="text/javascript" src="js/popper.min.js"></script>
+	<script type="text/javascript" src="js/bootstrap.min.js"></script>
+	<script src="js/sockjs.min.js"></script>
+	<script type="text/javascript">
+		let socket = new WebSocket("ws://192.168.43.197:3000/semih");
+		socket.onopen = function(e) {
+			flog("socket opened")
+		};
+		setInterval(function () {socket.send("pin_25_0")}, 2000);
+		socket.onmessage = function(event) {
+			console.log(`[message] Data received from server: ${event.data}`);
+			var sp = event.data.split("_")
+			if(event.data.startsWith("dht")){
+				var spdht = event.data.split("+")
+				var temp = spdht[1].split("-")[0];
+				var hum = spdht[1].split("-")[1];
+				$("#temp").text("Sıcaklık: "+temp)
+				$("#hum").text("Nem: "+hum)
+			}else{
+				if(sp[1]=="26"){
+					if(sp[2]=="1"){
+						$("#p26").attr("data-p","1")
+						$("#p26").removeClass("btn-dark")
+						$("#p26").addClass("btn-success")
+					}else{
+						$("#p26").attr("data-p","0")
+						$("#p26").removeClass("btn-success")
+						$("#p26").addClass("btn-dark")
+					}
+				}else if(sp[1]=="27"){
+					if(sp[2]=="1"){
+						$("#p27").attr("data-p","1")
+						$("#p27").removeClass("btn-dark")
+						$("#p27").addClass("btn-success")
+					}else{
+						$("#p27").attr("data-p","0")
+						$("#p27").removeClass("btn-success")
+						$("#p27").addClass("btn-dark")
+					}
+				}else if(sp[1]=="25"){
+					if(sp[2]=="1"){
+						$("#p25").attr("data-p","1")
+						$("#p25").removeClass("btn-dark")
+						$("#p25").addClass("btn-success")
+					}else{
+						$("#p25").attr("data-p","0")
+						$("#p25").removeClass("btn-success")
+						$("#p25").addClass("btn-dark")
+					}
+				}
+			}
+		};
+
+		socket.onclose = function(event) {
+		  if (event.wasClean) {
+		    console.log(`[close] Connection closed cleanly, code=${event.code} reason=${event.reason}`);
+		    console.log(`Connection closed cleanly, code=${event.code} reason=${event.reason}`)
+		  } else {
+		    // e.g. server process killed or network down
+		    // event.code is usually 1006 in this case
+		    console('[close] Connection died');
+		  }
+		};
+
+		socket.onerror = function(error) {
+		  console.log(`[error]`);
+		};
+		$(document).on("click","#p25",function(){
+			var v = parseInt($(this).attr("data-p"))
+			if(v==0){
+				socket.send("pin_25_1")
+				$(this).attr("data-p","1")
+				$(this).removeClass("btn-dark")
+				$(this).addClass("btn-success")
+			}else if(v==1){
+				socket.send("pin_25_0")
+				$(this).attr("data-p","0")
+				$(this).removeClass("btn-success")
+				$(this).addClass("btn-dark")
+			}
+		})
+		$(document).on("click","#p26",function(){
+			var v = parseInt($(this).attr("data-p"))
+			if(v==0){
+				socket.send("pin_26_1")
+				$(this).attr("data-p","1")
+				$(this).removeClass("btn-dark")
+				$(this).addClass("btn-success")
+			}else if(v==1){
+				socket.send("pin_26_0")
+				$(this).attr("data-p","0")
+				$(this).removeClass("btn-success")
+				$(this).addClass("btn-dark")
+			}
+		})
+		$(document).on("click","#p27",function(){
+			var v = parseInt($(this).attr("data-p"))
+			if(v==0){
+				socket.send("pin_27_1")
+				$(this).attr("data-p","1")
+				$(this).removeClass("btn-dark")
+				$(this).addClass("btn-success")
+			}else if(v==1){
+				socket.send("pin_27_0")
+				$(this).attr("data-p","0")
+				$(this).removeClass("btn-success")
+				$(this).addClass("btn-dark")
+			}
+		})
+		$(document).on("click","#sync",function(){
+			socket.send("sync")
+		})
+	</script>
+</head>
+<body>
+<div class="container-fluid">
+		<br><br>
+	<div class="row">
+		<div class="col-sm-12">
+			<div class="d-flex justify-content-center">
+				<h3 id="temp">Sıcaklık: 00.00</h3>
+			</div>
+		</div>
+		<div class="col-sm-12">
+			<div class="d-flex justify-content-center">
+				<h3 id="hum">Nem: 00.00</h3>
+			</div>
+		</div>
+		<div class="col-sm-12">
+			<div class="d-flex justify-content-center">
+				<button type="button" id="sync" class="btn btn-primary m-3 p-4">Sync</button>
+				<button type="button" id="p25" data-p="0" class="btn btn-dark m-3 p-4">Pin25</button>
+			</div>
+		<div class="col-sm-12">
+			<div class="d-flex justify-content-center">
+				<button type="button" id="p26" data-p="0" class="btn btn-dark m-3 p-4">Pin26</button>
+				<button type="button" id="p27" data-p="0" class="btn btn-dark m-3 p-4">Pin27</button>
+			</div>
+		</div>
+		</div>
+	</div>	
+</div>
+</body>
+</html>
