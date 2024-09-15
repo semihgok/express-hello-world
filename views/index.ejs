@@ -10,7 +10,7 @@
 	<script type="text/javascript" src="js/bootstrap.min.js"></script>
 	<script src="js/sockjs.min.js"></script>
 	<script type="text/javascript">
-		let socket = new WebSocket("ws://192.168.43.197:3000/semih");
+		let socket = new WebSocket("wss://express-hello-world-w3of.onrender.com/semih");
 		socket.onopen = function(e) {
 			flog("socket opened")
 		};

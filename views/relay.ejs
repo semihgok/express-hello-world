@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>ESP32</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<link rel="stylesheet" type="text/css" href="css/bootstrap.min.css">
+	<script type="text/javascript" src="js/jquery.min.js"></script>
+	<script type="text/javascript" src="js/popper.min.js"></script>
+	<script type="text/javascript" src="js/bootstrap.min.js"></script>
+	<script src="js/sockjs.min.js"></script>
+	<script type="text/javascript">
+		let socket = new WebSocket("wss://express-hello-world-w3of.onrender.com/semih");
+		socket.onopen = function(e) {
+			flog("socket opened")
+		};
+		function getStatus(data){
+			var stats = data.split("-")
+			for (let i = 0; i < stats.length; i++) {
+			    setBtnStatus(stats[i].split(":")[0],stats[i].split(":")[1])
+			}
+		}
+
+		function setBtnStatus(btn,status){
+			if(status=="1"){
+				$("#"+btn).removeClass("btn-danger").addClass("btn-success")
+			}else{
+				$("#"+btn).removeClass("btn-success").addClass("btn-danger")
+			}
+		}
+
+		setInterval(function () {socket.send("stat")}, 2000);
+		socket.onmessage = function(event) {
+			console.log(`[message] Data received from server: ${event.data}`);
+			getStatus(event.data)
+
+		};
+		$(document).ready(function() {
+			$(".btn").click(function(){
+				socket.send($(this).attr("id"))
+			})
+		})
+		socket.onclose = function(event) {
+		  if (event.wasClean) {
+		    console.log(`[close] Connection closed cleanly, code=${event.code} reason=${event.reason}`);
+		    console.log(`Connection closed cleanly, code=${event.code} reason=${event.reason}`)
+		  } else {
+		    console('[close] Connection died');
+		  }
+		};
+
+		socket.onerror = function(error) {
+		  console.log(`[error]`);
+		};
+	</script>
+</head>
+<body>
+<div class="container-fluid">
+	<div class="row">
+		<div class="col">
+			
+		<div class="d-flex justify-content-center">
+		<h2>Röle Kontrol</h2>
+			
+		</div>
+		</div>
+		<div class="col-sm-12">
+			<div class="d-flex justify-content-center">
+				<button id="r1" class="btn btn-danger p-3 m-2 r1">Role1</button>
+				<button id="r2" class="btn btn-danger p-3 m-2 r2">Role2</button>
+				<button id="r3" class="btn btn-danger p-3 m-2 r3">Role3</button>
+				<button id="r4" class="btn btn-danger p-3 m-2 r4">Role4</button>
+			</div>
+		</div>	
+	</div>
+</div>
+</body>
+</html>
