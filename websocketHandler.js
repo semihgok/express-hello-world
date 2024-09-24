@@ -18,7 +18,13 @@ function findBoardByName(boardName, boards) {
 module.exports = (users, boards) => {
 	return (ws, req) => {
 		ws.on('message', (msg) => {
-			const data = JSON.parse(msg);
+			try {
+		        data = JSON.parse(msg);
+		    } catch (error) {
+		        console.error('JSON parse error:', error);
+		        ws.send(JSON.stringify({ type: 'error', message: 'Geçersiz mesaj formatı.' }));
+		        return; // Hatalı mesajı işleme almayı durdur
+		    }
 			console.log(data);
 
 			switch (data.type) {
