@@ -1,39 +1,35 @@
-var express = require('express');
-var app = express();
-var expressWs = require('express-ws')(app);
-const port = process.env.PORT || 3001;
+const express = require('express');
+const expressWs = require('express-ws');
+const app = expressWs(express()).app;
+const port = process.env.PORT || 3000;
 
-app.set("view engine","ejs");
+app.set("view engine", "ejs");
 app.use(express.static('public'));
 
-app.use(function (req, res, next) {
-  req.testing = 'testing';
-  return next();
-});
+// User data and boards storage
+const users = {
+    "semih": { "ws": null, "token": "" }
+};
 
-app.get('/', function(req, res, next){
-	//console.log('get route', req.testing);
-	res.render("index");
-});
-app.get('/relay', function(req, res, next){
-	//console.log('get route', req.testing);
-	res.render("relay");
-});
+const boards = [
+    { "boardName": "esp1", "ws": null, "status": false, "owner": "semih", "timeout": new Date() }
+];
 
-app.ws('/semih', function(ws, req) {
-	ws.on('message', function(msg) {
-		expressWs.getWss().clients.forEach(function(i,j){
-			if(ws!=i){
-				if(msg=="pin_25_0"){
-					i.send("dht")
-				}else{
-					i.send(msg)
-				}
-			}
-		})
-		console.log(msg);
-	});
-	console.log('socket', req.testing);
-});
+// Route definitions
+app.get('/', (req, res) => res.render("index"));
+app.get('/relay', (req, res) => res.render("relay"));
 
-app.listen(3000);
+// WebSocket Handling
+const websocketHandler = require('./websocketHandler');
+app.ws('/semih', websocketHandler(users, boards));
+setInterval(() => {
+    boards.forEach(board => {
+        if (board.ws) {
+            board.ws.send("status");
+        }
+    });
+}, 1000);
+// Start the server
+app.listen(port, () => {
+    console.log(`Server is running on port ${port}`);
+});

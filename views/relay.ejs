@@ -1,78 +1,136 @@
 <!DOCTYPE html>
-<html>
+<html lang="tr">
 <head>
-	<title>ESP32</title>
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
-	<link rel="stylesheet" type="text/css" href="css/bootstrap.min.css">
-	<script type="text/javascript" src="js/jquery.min.js"></script>
-	<script type="text/javascript" src="js/popper.min.js"></script>
-	<script type="text/javascript" src="js/bootstrap.min.js"></script>
+	<title>ESP32</title>
+	<link rel="stylesheet" href="css/bootstrap.min.css">
+	<script src="js/jquery.min.js"></script>
+	<script src="js/popper.min.js"></script>
+	<script src="js/bootstrap.min.js"></script>
 	<script src="js/sockjs.min.js"></script>
-	<script type="text/javascript">
-		let socket = new WebSocket("wss://express-hello-world-w3of.onrender.com/semih");
-		socket.onopen = function(e) {
-			flog("socket opened")
-		};
-		function getStatus(data){
-			var stats = data.split("-")
-			for (let i = 0; i < stats.length; i++) {
-			    setBtnStatus(stats[i].split(":")[0],stats[i].split(":")[1])
-			}
-		}
-
-		function setBtnStatus(btn,status){
-			if(status=="1"){
-				$("#"+btn).removeClass("btn-danger").addClass("btn-success")
-			}else{
-				$("#"+btn).removeClass("btn-success").addClass("btn-danger")
-			}
-		}
-
-		setInterval(function () {socket.send("stat")}, 2000);
-		socket.onmessage = function(event) {
-			console.log(`[message] Data received from server: ${event.data}`);
-			getStatus(event.data)
-
-		};
+	<script>
 		$(document).ready(function() {
-			$(".btn").click(function(){
-				socket.send($(this).attr("id"))
-			})
-		})
-		socket.onclose = function(event) {
-		  if (event.wasClean) {
-		    console.log(`[close] Connection closed cleanly, code=${event.code} reason=${event.reason}`);
-		    console.log(`Connection closed cleanly, code=${event.code} reason=${event.reason}`)
-		  } else {
-		    console('[close] Connection died');
-		  }
-		};
+			const socket = new WebSocket("wss://express-hello-world-w3of.onrender.com/semih");
+			//const socket = new WebSocket("ws://192.168.43.198:3000/semih");
+			const name = "semih";
+			const board = "esp1";
+			let boardStatus = false;
+			let token = "";
 
-		socket.onerror = function(error) {
-		  console.log(`[error]`);
-		};
+			socket.onopen = () => {
+				console.log("Socket opened");
+				setName(name);
+			};
+
+			function updateStatus(isConnected) {
+				const statusElement = $('#status');
+				if (isConnected) {
+					statusElement.text('Bağlı').removeClass('badge-danger').addClass('badge-success');
+				} else {
+					statusElement.text('Aktif Değil').removeClass('badge-success').addClass('badge-danger');
+				}
+			}
+
+			function sendPrivateMessage(targetName, message) {
+				socket.send(JSON.stringify({
+					type: 'toBoard',
+					name: name,
+					targetName: targetName,
+					message: message,
+					token: token
+				}));
+			}
+
+			function setName(name) {
+				socket.send(JSON.stringify({ type: 'setName', name: name }));
+			}
+
+			function getStatus(data) {
+				const stats = data.split("-");
+				stats.forEach(stat => {
+					const [btn, status] = stat.split(":");
+					setBtnStatus(btn, status);
+				});
+			}
+
+			function setBtnStatus(btn, status) {
+				$("#" + btn).toggleClass("btn-success", status === "1").toggleClass("btn-danger", status !== "1");
+			}
+
+			socket.onmessage = event => {
+				const data = JSON.parse(event.data);
+				console.log(data);
+
+				switch (data.type) {
+					case "error":
+						alert(data.message);
+						break;
+					case "boardMessage":
+						getStatus(data.message);
+						break;
+					case "confirmation":
+						$("#login").text("Giriş Yapıldı: " + name);
+						token = data.token;
+
+						setInterval(() => {
+							socket.send(JSON.stringify({
+								type: 'boardStatus',
+								name: name,
+								boardName: board,
+								token: token
+							}));
+						}, 1000);
+
+						socket.send(JSON.stringify({
+							type: 'checkRelays',
+							name: name,
+							targetName: board,
+							message: "",
+							token: token
+						}));
+						break;
+					case "boardStatus":
+						updateStatus(data.status);
+						break;
+				}
+			};
+
+			socket.onclose = event => {
+				console.log(event.wasClean ? 
+					`[close] Connection closed cleanly, code=${event.code} reason=${event.reason}` : 
+					'[close] Connection died');
+			};
+
+			socket.onerror = error => {
+				console.error(`Error: ${error}`);
+			};
+
+			$(".role").click(function() {
+				sendPrivateMessage(board, $(this).attr("id"));
+			});
+		});
 	</script>
 </head>
 <body>
-<div class="container-fluid">
-	<div class="row">
-		<div class="col">
-			
-		<div class="d-flex justify-content-center">
-		<h2>Röle Kontrol</h2>
-			
-		</div>
-		</div>
-		<div class="col-sm-12">
-			<div class="d-flex justify-content-center">
-				<button id="r1" class="btn btn-danger p-3 m-2 r1">Role1</button>
-				<button id="r2" class="btn btn-danger p-3 m-2 r2">Role2</button>
-				<button id="r3" class="btn btn-danger p-3 m-2 r3">Role3</button>
-				<button id="r4" class="btn btn-danger p-3 m-2 r4">Role4</button>
+	<div class="container">
+		<div class="row mb-4">
+			<div class="col text-center">
+				<span id="login">Giriş Yapılmadı</span>
+				<h2 class="text-primary">Kart: <span id="status" class="text-dark badge badge-danger">Aktif Değil</span></h2>
 			</div>
-		</div>	
+		</div>
+		<div class="row">
+			<div class="col-12 text-center">
+				<h2 class="font-weight-bold">Role Kontrol</h2>
+			</div>
+			<div class="col-12 d-flex justify-content-center">
+				<button id="r1" class="btn btn-danger btn-lg role mx-1">Role1</button>
+				<button id="r2" class="btn btn-danger btn-lg role mx-1">Role2</button>
+				<button id="r3" class="btn btn-danger btn-lg role mx-1">Role3</button>
+				<button id="r4" class="btn btn-danger btn-lg role mx-1">Role4</button>
+			</div>
+		</div>
 	</div>
-</div>
 </body>
 </html>
