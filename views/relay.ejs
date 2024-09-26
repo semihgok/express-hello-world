@@ -17,6 +17,10 @@
 			const board = "esp1";
 			let boardStatus = false;
 			let token = "";
+			var sendTime = 0;
+			var recTime = 0;
+			var ms = 0;
+
 
 			socket.onopen = () => {
 				console.log("Socket opened");
@@ -74,6 +78,7 @@
 						token = data.token;
 
 						setInterval(() => {
+							sendTime=new Date();
 							socket.send(JSON.stringify({
 								type: 'boardStatus',
 								name: name,
@@ -91,6 +96,8 @@
 						}));
 						break;
 					case "boardStatus":
+						recTime = new Date()
+						$("#ms").text(recTime-sendTime+"")
 						updateStatus(data.status);
 						break;
 				}
@@ -117,7 +124,7 @@
 		<div class="row mb-4">
 			<div class="col text-center">
 				<span id="login">Giriş Yapılmadı</span>
-				<h2 class="text-primary">Kart: <span id="status" class="text-dark badge badge-danger">Aktif Değil</span></h2>
+				<h2 class="text-primary">Kart: <span id="status" class="text-dark badge badge-danger">Aktif Değil</span></h2><span id="ms">ms:0</span>
 			</div>
 		</div>
 		<div class="row">
