@@ -118,7 +118,7 @@ function handleBoardStatus(data, ws, users, boards) {
 			if(elapsed > 1500){
 				currentBoard.status = false
 			}
-			ws.send(JSON.stringify({ type: 'boardStatus', status: currentBoard.status,status: currentBoard.ms }));
+			ws.send(JSON.stringify({ type: 'boardStatus', status: currentBoard.status, ms: currentBoard.ms }));
 		} else {
 			ws.send(JSON.stringify({ type: 'error', message: "Board not found" }));
 		}
