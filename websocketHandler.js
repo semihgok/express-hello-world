@@ -106,6 +106,7 @@ function handleStatus(data, boards) {
 	if (currentBoard) {
 		currentBoard.timeout = new Date();
 		currentBoard.status = true;
+		currentBoard.ms = new Date() - currentBoard.ms;
 	}
 }
 
@@ -117,7 +118,7 @@ function handleBoardStatus(data, ws, users, boards) {
 			if(elapsed > 1500){
 				currentBoard.status = false
 			}
-			ws.send(JSON.stringify({ type: 'boardStatus', status: currentBoard.status }));
+			ws.send(JSON.stringify({ type: 'boardStatus', status: currentBoard.status,status: currentBoard.ms }));
 		} else {
 			ws.send(JSON.stringify({ type: 'error', message: "Board not found" }));
 		}

@@ -12,7 +12,7 @@ const users = {
 };
 
 const boards = [
-    { "boardName": "esp1", "ws": null, "status": false, "owner": "semih", "timeout": new Date() }
+    { "boardName": "esp1", "ws": null, "status": false, "owner": "semih", "timeout": new Date(),"ms":0 }
 ];
 
 // Route definitions
@@ -25,6 +25,7 @@ app.ws('/semih', websocketHandler(users, boards));
 setInterval(() => {
     boards.forEach(board => {
         if (board.ws) {
+        	board.ms = new Date();
             board.ws.send("status");
         }
     });
